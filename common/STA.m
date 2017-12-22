@@ -50,8 +50,12 @@ end
 NSP = 0;
 %% If you want to do fsta it recalcultes the spike times such that the original spike train is burst corrected. The corrected spike times
 %% may or maynot be weighted, depending on the user input. Singleton spikes may or may not be included based on user input.
-p.skip_cycle = p.alternate_number * 2; # this line was not the STA_simplified
-A2a = A2a(p.start_TTL:p.stop_TTL, 1);# this line was not the STA_simplified
+p.skip_cycle = p.alternate_number * 2; % this line was not the STA_simplified
+if isnan(p.start_TTL) || isnan(p.stop_TTL)
+    A2a = A2a(1:end, 1);% this line was not the STA_simplified
+else
+    A2a = A2a(p.start_TTL:p.stop_TTL, 1);% this line was not the STA_simplified
+end
 
 if p.cardinal_STA_Only_Burst
  
@@ -157,7 +161,7 @@ abc = 0;
 
 counter = 0;
 
-if p.option == 0
+if isnan(p.trials_to_use)
  
     %% Goes through trials ii -> jj, calculating the spike times in each trial for a cell.
     for I = p.ii:p.jj
@@ -183,7 +187,7 @@ if p.option == 0
                      
                     end
                  
-                elseif p.alternate_number
+                elseif p.alternate_number < 1
                  
                     if p.flag_skip
                      
@@ -296,7 +300,7 @@ if p.option == 0
         end
     end
  
-elseif p.option == 1
+else
  
     for J = 1:length(p.trials_to_use)
      
