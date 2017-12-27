@@ -36,7 +36,7 @@ cellname = eval(p.cell_id);
 Stim = [];
 Freq = p.TTL_Pulse_Number / p.trial_length_in_secs;
 line_thickness = 2;
-p.names = strcat(p.names, p.cell_id);
+
 Stimulus_Matrix = [];
 Stim_all_trials = [];
 %% If STA is normalised STA, limits are reset to -1 -> 1
@@ -157,67 +157,37 @@ end
 %%
 
 STA = zeros(2 * p.tKerLen, 1);
-abc = 0;
 
 counter = 0;
-
+flag_skip = 0;
 if isnan(p.trials_to_use)
- 
     %% Goes through trials ii -> jj, calculating the spike times in each trial for a cell.
     for I = p.ii:p.jj
-     
         %%not present in the simplified STA
         if p.alternate
-         
-            if I > 1
-             
-                if p.alternate_number > 1
-                 
-                    if (rem(I, p.alternate_number) == 1)
-                     
-                        if p.flag_skip
-                         
-                            p.flag_skip = 0;
-                         
-                        elseif p.flag_skip == 0
-                         
-                            p.flag_skip = 1;
-                         
-                        end
-                     
-                    end
-                 
-                elseif p.alternate_number < 1
-                 
-                    if p.flag_skip
-                     
-                        p.flag_skip = 0;
-                     
-                    elseif p.flag_skip == 0
-                     
-                        p.flag_skip = 1;
-                     
-                    end
-                 
-                end
-             
-            end
-            %%
+			if p.alternate_number > 1
+				if (rem(I, p.alternate_number) == 1)
+					if flag_skip
+						flag_skip = 0;
+					elseif flag_skip == 0
+						flag_skip = 1;
+					end
+				end
+			elseif p.alternate_number < 1
+				if flag_skip
+					flag_skip = 0;
+				elseif flag_skip == 0
+					flag_skip = 1;
+				end
+			end
         elseif p.alternate == 0
-         
-            p.flag_skip = 1;
+            flag_skip = 1;
         end
      
-        if p.flag_skip
-         
-            I
+        if flag_skip
             counter = counter + 1;
-            if p.NR == 0
-                p.ii = 1;
-            else %% loads stimuli for each trial, if the experiment has non repeating trials
-                p.ii = I;
-                name = strcat(stimulus_file, num2str(ceil(p.ii)), '.txt');
-                name
+            if p.NR
+                name = strcat(stimulus_file, num2str(ceil(I)), '.txt');
                 A1 = importdata(name);
             end
          
@@ -234,7 +204,6 @@ if isnan(p.trials_to_use)
             end
             ceiling = length(Stim);
             if (p.leaveit == 1)
-                I
                 TTLStim = A2a((((p.TTL_Pulse_Number) * (I - 1)) + 1):((p.TTL_Pulse_Number) * (I - 1)) + p.TTL_Pulse_Number);
              
             elseif (p.leaveit == 2)
@@ -286,7 +255,6 @@ if isnan(p.trials_to_use)
          
             TTLStim_extended = horzcat(TTLStim', TTLStim(end)+1/Freq);
             sps = histc(tsp, TTLStim_extended)';      % bin spike times
-            abc = abc + sum(sps);
             mousetype = ' c57/bl6 wild type';
             xyz = strcat(p.cell_id, mousetype);
             title(xyz)
@@ -310,10 +278,7 @@ else
      
         counter = counter + 1;
      
-        if p.NR == 0
-            p.ii = 1;
-        else
-            p.ii = I;
+        if p.NR
             name = strcat(stimulus_file, num2str(ceil(p.stim_to_use(counter))), '.txt');
             A1 = importdata(name);
         end
@@ -363,7 +328,6 @@ else
      
         TTLStim_extended = horzcat(TTLStim', TTLStim(end)+1/Freq);
         sps = histc(tsp, TTLStim_extended)';      % bin spike times
-        abc = abc + sum(sps);
         mousetype = ' c57/bl6 wild type';
         xyz = strcat(p.cell_id, mousetype);
         title(xyz)
@@ -385,6 +349,7 @@ y = 1 * STA;
 frame = 1 / (p.TTL_Pulse_Number / p.trial_length_in_secs);
 
 x = (- (p.tKerLen)) * (frame) + .5 * frame:frame:p.tKerLen * frame - .5 * frame;
+
 h = plot(x, y);
 set(h, 'LineWidth', line_thickness)
 baseline = (1 * mean(Stim)) * ones(2 * p.tKerLen, 1);
@@ -400,6 +365,7 @@ hold on
 legend(['STA:spks = ', int2str(NSP)], ['Mean Stimulus : ', int2str(Freq), 'Hz stm. frq. : 35% var '])
 
 %%
+fig_names = strcat(p.names, p.cell_id);
 
 total_time = p.trial_length_in_secs * counter;
 Frequency = NSP / (counter * p.trial_length_in_secs);
@@ -410,7 +376,7 @@ mousetype = ' C57Bl/6 (wt) ';
 figure_heading = strcat(p.year, p.cell_id, mousetype, ' FR = ', num2str(Frequency), ' Hz: ', num2str(total_time), ' sec : epiretinal', ' lock out is ', num2str(p.leave_out), 's', '-BTA is ', num2str(p.cardinal_STA_Only_Burst), 'WB is ', num2str(p.weighted_burst), 'Singleton is ', num2str(p.singleton_spikes));
 title(figure_heading)
 
-set(gcf, 'name', p.names)
+set(gcf, 'name', fig_names)
 
 fname = strcat(p.exp_id, int2str(Freq), 'Hz_', num2str(p.cont), '_', p.mean_V, '\', p.cell_id)
 
@@ -479,7 +445,7 @@ if ~ exist(dump, 'dir'), mkdir(dump); end
      
         figure_heading = strcat(p.year, p.cell_id, mousetype, ' FR = ', num2str(Frequency), ' Hz: ', num2str(total_time), ' sec : epiretinal', ' lock out is ', num2str(p.leave_out), 's', '-BTA is ', num2str(p.cardinal_STA_Only_Burst), 'WB is ', num2str(p.weighted_burst), 'Singleton is ', num2str(p.singleton_spikes));
         title(figure_heading)
-        set(gcf, 'name', p.names)
+        set(gcf, 'name', fig_names)
         if ~ exist(dump, 'dir'), mkdir(dump); end
             ext = '.fig';
             saveas(gcf, [dump, p.cell_id, num2str(p.leave_out), ' ', num2str(p.ii), 'to', num2str(p.jj), '-', 'error_bars_not_norm_full', '-BTA is ', num2str(p.cardinal_STA_Only_Burst), 'WB is ', num2str(p.weighted_burst), 'Singleton is ', num2str(p.singleton_spikes), ext], 'fig');
@@ -550,7 +516,7 @@ if ~ exist(dump, 'dir'), mkdir(dump); end
          
             figure_heading = strcat(p.year, p.cell_id, mousetype, ' FR = ', num2str(Frequency), ' Hz: ', num2str(total_time), ' sec : epiretinal', ' lock out is ', num2str(p.leave_out), 's', '-BTA is ', num2str(p.cardinal_STA_Only_Burst), 'WB is ', num2str(p.weighted_burst), 'Singleton is ', num2str(p.singleton_spikes));
             title(figure_heading)
-            set(gcf, 'name', p.names)
+            set(gcf, 'name', fig_names)
             if ~ exist(dump, 'dir'), mkdir(dump); end
                 ext = '.fig';
                 saveas(gcf, [dump, p.cell_id, num2str(p.leave_out), ' ', num2str(p.ii), 'to', num2str(p.jj), '-', 'error_bars_norm_full', '-BTA is ', num2str(p.cardinal_STA_Only_Burst), 'WB is ', num2str(p.weighted_burst), 'Singleton is ', num2str(p.singleton_spikes), ext], 'fig');
