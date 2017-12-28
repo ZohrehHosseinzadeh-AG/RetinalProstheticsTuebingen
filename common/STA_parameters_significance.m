@@ -12,7 +12,6 @@ function STA_parameters_significance(Frequency, dump, frame, STA, Stim, p)
 % implicitly in the previous code STA.  p.tKerLen is 25. frame is .04s.
 % STA is the STA vector.
 % Stim is the stimulus of the last stimulus trial. I use it to calculate baseline mean and variance. I use these values for significance calculation later.
-% p.A & p.B are the limits of the STA.
 % p.cell_id is the name of the cell. le
 % p.leave_out is the exclusion period of the STA.
 % p.ii and p.jj are the trial number start and end.
@@ -23,6 +22,11 @@ function STA_parameters_significance(Frequency, dump, frame, STA, Stim, p)
 % p.singleton_spikes. It is 1 if you include singleton spikes
 
 %% CODE
+if p.Normalise == 1
+    plt_ylim = [- 1, 1];
+else
+	plt_ylim = [- 1300, -300];
+end
 
 %% cubic splined sta
 t = (- (p.tKerLen)) * (frame) + .5 * frame:frame:p.tKerLen * frame - .5 * frame;
@@ -37,15 +41,15 @@ end
 T = spline(t, tt, ttt);
 figure
 plot(ttt, T, 'LineWidth', 2)
-ylim([p.A p.B])
+ylim([plt_ylim(1) plt_ylim(2)])
 set(gcf, 'color', 'w');
 baseline = (1 * mean(Stim)) * ones(length(T), 1);
 
 hold on
 plot(ttt, baseline, 'k')
-step_size = (p.B - p.A) / 10;
-zeromarker = zeros(length(p.A:step_size:p.B));
-plot(zeromarker, p.A:step_size:p.B, 'k');
+step_size = (plt_ylim(2) - plt_ylim(1)) / 10;
+zeromarker = zeros(length(plt_ylim(1):step_size:plt_ylim(2)));
+plot(zeromarker, plt_ylim(1):step_size:plt_ylim(2), 'k');
 
 %% significance of peak and trough of STA
 
@@ -450,14 +454,14 @@ if ~ p.vstim
             T = spline(t, tt, ttt);
             
             plot(ttt, T, 'LineWidth', 2)
-            ylim([p.A p.B])
+            ylim([plt_ylim(1) plt_ylim(2)])
             set(gcf, 'color', 'w');
             baseline = (1 * mean(Stim)) * ones(length(T), 1);
             hold on
             plot(ttt, baseline, 'k')
-            step_size = (p.B - p.A) / 10;
-            zeromarker = zeros(length(p.A:step_size:p.B));
-            plot(zeromarker, p.A:step_size:p.B, 'k');
+            step_size = (plt_ylim(2) - plt_ylim(1)) / 10;
+            zeromarker = zeros(length(plt_ylim(1):step_size:plt_ylim(2)));
+            plot(zeromarker, plt_ylim(1):step_size:plt_ylim(2), 'k');
             
             %% significance of peak and trough of STA
             
